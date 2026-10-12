@@ -2,239 +2,383 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AAPC / AHIMA Medical Coding Unlimited Exam Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AAPC / AHIMA Medical Coding Certification Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- PDF.js for PDF extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Tesseract.js for Image OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    .palette-btn {
-      width: 2.1rem;
-      height: 2.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.725rem;
-      font-weight: 700;
-      border-radius: 0.375rem;
-      transition: all 0.15s ease;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
-      border-radius: 4px;
+    .palette-btn { width: 2.25rem; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border-radius: 0.5rem; transition: all 0.15s ease; touch-action: manipulation; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+    @media (max-width: 1023px) {
+      .drawer-backdrop { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased select-none font-sans min-h-screen flex flex-col justify-between">
+<body class="bg-slate-100 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between select-none">
 
-  <!-- ==================== 1. LOGIN WINDOW ==================== -->
-  <div id="login-modal" class="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
-      <div class="bg-gradient-to-r from-blue-700 to-indigo-800 px-6 py-5 text-white">
-        <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-white/10 rounded-xl">
-            <i class="fa-solid fa-infinity text-2xl text-blue-200"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-bold">Unlimited Exam Engine</h2>
-            <p class="text-blue-200 text-xs font-medium">CPC / CCS Medical Coding Practice Simulator</p>
-          </div>
-        </div>
+  <!-- ==================== 1. UNIFIED LOGIN MODAL ==================== -->
+  <div id="login-modal" class="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden my-auto">
+      
+      <!-- Role Toggle Header -->
+      <div class="bg-slate-900 p-1.5 flex gap-1 border-b border-slate-800">
+        <button id="tab-student-btn" type="button" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-blue-600 text-white flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-user-graduate"></i> Student (Jasna)
+        </button>
+        <button id="tab-admin-btn" type="button" class="flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Admin (Hakkeem)
+        </button>
       </div>
 
-      <form id="login-form" class="p-6 space-y-4">
+      <div class="bg-gradient-to-r from-blue-700 to-indigo-800 px-5 sm:px-6 py-4 text-white">
+        <h2 id="login-title" class="text-lg font-bold">Jasna's Examination Portal</h2>
+        <p id="login-subtitle" class="text-blue-200 text-xs font-medium">AAPC / Prometric Testing Simulation & Valuation</p>
+      </div>
+
+      <form id="login-form" class="p-5 sm:p-6 space-y-3.5">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Candidate ID / Name</label>
-          <div class="relative">
-            <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
-            <input type="text" id="candidate-id" required value="CANDIDATE-2026" class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Username</label>
+          <input type="text" id="login-user" required value="Jasna" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 font-medium" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Password</label>
+          <input type="password" id="login-pass" required value="2026" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          <p id="pass-hint" class="text-xs text-slate-500 mt-1">Authorized candidate password: <span class="font-bold text-blue-600">2026</span></p>
+        </div>
+
+        <!-- Student Exam Options -->
+        <div id="student-options" class="space-y-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Exam Mode / Bank Size</label>
+            <select id="exam-mode-select" class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+              <option value="all">Full Progressive Bank (Step 1 Simple &rarr; Step 3 Clinical)</option>
+              <option value="500">500 Questions (Master Bank)</option>
+              <option value="150">150 Questions (Official CPC Simulation)</option>
+              <option value="50">50 Questions (Quick Review)</option>
+              <option value="25">25 Questions (Sprint Practice)</option>
+            </select>
           </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Access Password</label>
-          <div class="relative">
-            <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
-            <input type="password" id="exam-password" required value="code2026" class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Session Clock</label>
+            <select id="exam-timer-select" class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+              <option value="99999">Untimed Practice Mode</option>
+              <option value="240">240 Minutes (Official CPC 4-Hour Standard)</option>
+              <option value="120">120 Minutes (Standard Half-Mock)</option>
+              <option value="60">60 Minutes Practice</option>
+            </select>
           </div>
-          <p class="text-xs text-slate-500 mt-1">Default Password: <span class="font-mono font-bold text-blue-600">code2026</span></p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Session Target Size</label>
-          <select id="exam-mode-select" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-            <option value="unlimited">♾️ Unlimited / Endless Marathon Mode</option>
-            <option value="500">500 Questions (Mega Exam Bank)</option>
-            <option value="250">250 Questions (Comprehensive Mock)</option>
-            <option value="100">100 Questions (Standard AAPC Mock)</option>
-            <option value="50">50 Questions (Speed Review)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Session Timer</label>
-          <select id="exam-timer-select" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-            <option value="99999">Untimed Practice Mode</option>
-            <option value="120">120 Minutes (Timed Simulation)</option>
-            <option value="60">60 Minutes (Standard)</option>
-            <option value="30">30 Minutes (Sprint Practice)</option>
-          </select>
         </div>
 
         <div id="login-error" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-lg flex items-center gap-2">
           <i class="fa-solid fa-triangle-exclamation"></i>
-          <span>Invalid Credentials. Default password: code2026</span>
+          <span id="login-error-text">Invalid credentials.</span>
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm">
-          <i class="fa-solid fa-rocket"></i>
-          <span>Launch Unlimited Session</span>
+        <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span id="submit-btn-text">Start Exam Session</span>
+        </button>
+
+        <button type="button" id="view-history-btn" class="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-chart-line text-blue-600"></i>
+          <span>View Jasna's Past Results & Analytics</span>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- ==================== 2. EXAM INTERFACE WINDOW ==================== -->
-  <div id="exam-window" class="hidden flex-col h-screen overflow-hidden">
-    <header class="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shadow-md border-b border-slate-800">
-      <div class="flex items-center gap-4">
-        <span class="bg-blue-900 text-blue-200 text-xs px-2.5 py-1 rounded-md font-mono font-semibold" id="active-candidate">Candidate: CANDIDATE-2026</span>
-        <span class="text-xs text-slate-400 hidden sm:inline">| Endless Clinical Question Engine</span>
+  <!-- ==================== 2. ADMIN QUESTION BANK MANAGER ==================== -->
+  <div id="admin-window" class="hidden flex-1 p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden p-4 sm:p-6 lg:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-200 gap-3">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+            Instructor Control Dashboard
+          </span>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Medical Coding Curriculum & OCR</h2>
+          <p class="text-slate-500 text-xs">Instructor: Hakkeem | Questions in Bank: <span id="admin-bank-count" class="font-bold text-blue-600">500</span></p>
+        </div>
+        <div class="flex gap-2">
+          <button id="admin-launch-student-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-play"></i> Student View
+          </button>
+          <button id="admin-logout-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 border border-slate-300">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </div>
       </div>
 
-      <div class="flex items-center gap-4 md:gap-6">
-        <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3.5 py-1.5 rounded-lg">
-          <i class="fa-regular fa-clock text-amber-400 animate-pulse"></i>
-          <span class="text-xs uppercase tracking-wider text-slate-300 hidden md:inline">Time:</span>
-          <span id="timer-display" class="font-mono text-sm md:text-base font-bold text-amber-400">Untimed</span>
+      <!-- Action Tabs: Multi-Format Uploads -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 my-5">
+        <!-- PDF / OCR / Text Ingestion -->
+        <div class="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2 text-indigo-700 font-bold text-sm mb-2">
+              <i class="fa-solid fa-file-pdf"></i> Upload Study Material (PDF, Image, Notes)
+            </div>
+            <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+              Upload textbook pages, guidelines, or phone photos. Built-in OCR & PDF parsers will extract the content and convert it into structured multiple-choice questions.
+            </p>
+
+            <div class="mb-3">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Select PDF or Page Image</label>
+              <input type="file" id="file-upload-input" accept=".pdf,image/png,image/jpeg,image/webp" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-lg bg-white" />
+            </div>
+
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Or Paste Extracted Text / Notes</label>
+            <textarea id="raw-notes-input" rows="4" placeholder="Paste guidelines or multiple-choice questions here...&#10;Q: What modifier is used for bilateral surgery?&#10;A) Modifier 50&#10;B) Modifier 51&#10;C) Modifier 59&#10;D) Modifier 24&#10;Answer: A" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono"></textarea>
+            
+            <div id="ocr-status" class="hidden text-xs text-indigo-600 font-semibold mt-2 flex items-center gap-2">
+              <i class="fa-solid fa-spinner fa-spin"></i> <span id="ocr-status-text">Processing document...</span>
+            </div>
+          </div>
+
+          <button id="process-file-btn" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Process & Append to Bank
+          </button>
         </div>
 
-        <button id="end-exam-btn" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
-          Submit & Grade
+        <!-- Add Single Custom Question -->
+        <div class="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2 text-blue-700 font-bold text-sm mb-2">
+            <i class="fa-solid fa-pen-to-square"></i> Create Single Question (Progressive Step)
+          </div>
+          <form id="single-q-form" class="space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-0.5">Tier / Progression</label>
+                <select id="new-tier" class="w-full p-2 border rounded bg-white">
+                  <option value="Simple">Step 1: Simple / Foundation</option>
+                  <option value="Intermediate">Step 2: Guideline Application</option>
+                  <option value="Advanced">Step 3: Multi-Step Clinical Case</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-0.5">Domain</label>
+                <input type="text" id="new-domain" placeholder="e.g. Integumentary, Modifiers" required class="w-full p-2 border rounded bg-white" />
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-0.5">Question Stem</label>
+              <textarea id="new-stem" rows="2" placeholder="Clinical scenario or question stem..." required class="w-full p-2 border rounded bg-white"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="new-opt-a" placeholder="Option A" required class="p-1.5 border rounded bg-white" />
+              <input type="text" id="new-opt-b" placeholder="Option B" required class="p-1.5 border rounded bg-white" />
+              <input type="text" id="new-opt-c" placeholder="Option C" required class="p-1.5 border rounded bg-white" />
+              <input type="text" id="new-opt-d" placeholder="Option D" required class="p-1.5 border rounded bg-white" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-0.5">Correct</label>
+                <select id="new-correct" class="w-full p-1.5 border rounded bg-white font-bold text-emerald-700">
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+              <div class="col-span-2">
+                <label class="block font-semibold text-slate-600 mb-0.5">Rationale</label>
+                <input type="text" id="new-rationale" placeholder="Guideline rule citation..." class="w-full p-1.5 border rounded bg-white" />
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg mt-2 transition shadow">
+              <i class="fa-solid fa-plus mr-1"></i> Add Question to Bank
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Bank Table -->
+      <div class="border-t pt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Question Inventory</h3>
+          <button id="reset-default-bank-btn" class="text-xs text-rose-600 hover:underline">Reset to Default 500 Bank</button>
+        </div>
+        <div class="max-h-60 overflow-y-auto border border-slate-200 rounded-lg custom-scrollbar">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b">
+              <tr>
+                <th class="p-2">#</th>
+                <th class="p-2">Tier</th>
+                <th class="p-2">Domain</th>
+                <th class="p-2">Stem</th>
+                <th class="p-2">Ans</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. STUDENT EXAM INTERFACE (MOBILE + LAPTOP OPTIMIZED) ==================== -->
+  <div id="exam-window" class="hidden flex-col h-screen overflow-hidden">
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white px-3 sm:px-6 py-2.5 flex items-center justify-between shadow-md border-b border-slate-800 z-10">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded font-mono font-semibold">Jasna</span>
+        <span id="header-progress" class="text-xs text-slate-400">Q 1/500</span>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Quick Question Jump Input (Header) -->
+        <div class="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1">
+          <span class="text-[11px] text-slate-400 font-medium">Jump:</span>
+          <input type="number" id="quick-jump-input" min="1" max="500" placeholder="#" class="w-12 bg-slate-900 text-white text-center text-xs rounded border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 py-0.5" />
+          <button id="quick-jump-btn" class="text-xs text-blue-400 hover:text-white px-1"><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+        <!-- Clock -->
+        <div class="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+          <i class="fa-regular fa-clock text-amber-400 text-xs"></i>
+          <span id="timer-display" class="font-mono text-xs sm:text-sm font-bold text-amber-400">Untimed</span>
+        </div>
+
+        <!-- Mobile Palette Toggle Button -->
+        <button id="mobile-palette-toggle-btn" class="lg:hidden bg-slate-800 hover:bg-slate-700 text-white text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1">
+          <i class="fa-solid fa-table-cells"></i>
+          <span class="text-[11px]">Grid</span>
+        </button>
+
+        <!-- Submit Button -->
+        <button id="end-exam-btn" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 sm:px-4 py-1.5 rounded-lg transition shadow">
+          Submit
         </button>
       </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
-      <!-- Left Column: Question stem and options -->
-      <section class="flex-1 flex flex-col justify-between p-6 bg-white overflow-y-auto custom-scrollbar">
+    <div class="flex flex-1 overflow-hidden relative">
+      <!-- Main Question Area -->
+      <section class="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 bg-white overflow-y-auto custom-scrollbar">
         <div>
-          <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
-            <div class="flex items-center gap-2">
-              <span id="q-category" class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded border border-blue-200">Domain</span>
+          <!-- Question Meta Row -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200 mb-4 sm:mb-6">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="q-tier-tag" class="bg-emerald-50 text-emerald-700 text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded border border-emerald-200">Step 1: Simple</span>
+              <span id="q-category" class="bg-blue-50 text-blue-700 text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded border border-blue-200 truncate max-w-[200px] sm:max-w-none">Integumentary</span>
               <span id="q-number" class="text-xs font-semibold text-slate-500">Question 1</span>
             </div>
             
-            <button id="mark-review-btn" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition border-slate-300 text-slate-600 hover:bg-slate-50">
+            <button id="mark-review-btn" class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition">
               <i class="fa-regular fa-bookmark"></i>
-              <span>Mark for Review</span>
+              <span>Review Later</span>
             </button>
           </div>
 
-          <div class="mb-6">
-            <p id="q-stem" class="text-base md:text-lg text-slate-900 font-medium leading-relaxed"></p>
+          <!-- Question Stem -->
+          <div class="mb-5 sm:mb-6">
+            <p id="q-stem" class="text-sm sm:text-base lg:text-lg text-slate-900 font-medium leading-relaxed"></p>
           </div>
 
-          <div id="options-list" class="space-y-3 max-w-3xl"></div>
+          <!-- Options -->
+          <div id="options-list" class="space-y-2.5 sm:space-y-3 max-w-3xl"></div>
         </div>
 
-        <!-- Navigation Buttons -->
-        <div class="pt-6 border-t border-slate-200 flex items-center justify-between mt-8">
-          <button id="prev-btn" class="px-5 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none">
-            <i class="fa-solid fa-chevron-left mr-1.5"></i> Previous
+        <!-- Sticky Navigation Footer -->
+        <div class="pt-4 border-t border-slate-200 flex items-center justify-between mt-6 bg-white">
+          <button id="prev-btn" class="px-4 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none">
+            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
           </button>
-          <div class="flex items-center gap-3">
-            <button id="clear-btn" class="px-4 py-2 text-slate-500 text-sm font-medium hover:text-slate-800">
-              Clear Choice
-            </button>
-            <button id="next-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition">
-              Next <i class="fa-solid fa-chevron-right ml-1.5"></i>
+          <div class="flex items-center gap-2 sm:gap-3">
+            <button id="clear-btn" class="px-3 py-2 text-slate-500 text-xs sm:text-sm font-medium hover:text-slate-800">Clear</button>
+            <button id="next-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition shadow">
+              Next <i class="fa-solid fa-chevron-right ml-1"></i>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- Right Column: Palette & Legend -->
-      <aside class="w-80 border-l border-slate-200 bg-slate-50 p-5 flex flex-col justify-between hidden lg:flex">
+      <!-- Palette Drawer (Desktop Sidebar + Mobile Slide-Over) -->
+      <aside id="palette-aside" class="fixed inset-y-0 right-0 z-30 w-72 sm:w-80 bg-slate-50 border-l border-slate-200 p-4 sm:p-5 flex flex-col justify-between transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out shadow-2xl lg:shadow-none">
         <div>
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Question Palette</h3>
-            <span id="palette-count" class="text-xs font-semibold text-slate-500">0 Answered</span>
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Jump to Question</h3>
+              <p id="palette-count" class="text-[11px] text-slate-500 font-medium">0 / 500 Answered</p>
+            </div>
+            <button id="close-palette-drawer-btn" class="lg:hidden text-slate-400 hover:text-slate-700 p-1">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
           </div>
-          <div id="palette-grid" class="grid grid-cols-5 gap-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar mb-4"></div>
+
+          <!-- Quick Dropdown Jump -->
+          <div class="mb-3">
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Select from dropdown:</label>
+            <select id="jump-dropdown-select" class="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500">
+              <!-- populated dynamically -->
+            </select>
+          </div>
+
+          <!-- Palette Grid -->
+          <div id="palette-grid" class="grid grid-cols-5 gap-1.5 max-h-[50vh] lg:max-h-[380px] overflow-y-auto pr-1 custom-scrollbar mb-4"></div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-xl p-3.5 text-xs space-y-2.5 shadow-sm">
-          <div class="font-bold text-slate-700 border-b pb-1.5 flex items-center justify-between">
-            <span>Status Legend</span>
+        <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 shadow-sm">
+          <div class="font-bold text-slate-700 border-b pb-1 text-[11px] flex items-center justify-between">
+            <span>Color Legend</span>
             <i class="fa-solid fa-circle-info text-slate-400"></i>
           </div>
-          <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded bg-emerald-600 inline-block"></span><span class="text-slate-600">Answered</span></div>
-          <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded bg-amber-500 inline-block"></span><span class="text-slate-600">Marked for Review</span></div>
-          <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded bg-slate-200 border border-slate-300 inline-block"></span><span class="text-slate-600">Unanswered</span></div>
-          <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded border-2 border-blue-600 inline-block"></span><span class="text-slate-600">Current Question</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-600 inline-block"></span><span>Answered</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span><span>Review Later</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-slate-200 border inline-block"></span><span>Unanswered</span></div>
         </div>
       </aside>
+
+      <!-- Backdrop for mobile drawer -->
+      <div id="palette-backdrop" class="fixed inset-0 z-20 drawer-backdrop hidden lg:hidden"></div>
     </div>
   </div>
 
-  <!-- ==================== 3. REPORT / VALUATION SCREEN ==================== -->
-  <div id="report-window" class="hidden flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden p-6 md:p-8">
-      <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-200 gap-4">
+  <!-- ==================== 4. REPORT & VALUATION SCREEN ==================== -->
+  <div id="report-window" class="hidden flex-1 p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-200 gap-3">
         <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">Exam Valuation Completed</span>
-          <h2 class="text-2xl font-bold text-slate-900 mt-1">Medical Coding Performance Report</h2>
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Valuation Saved</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Jasna's Medical Coding Valuation Report</h2>
           <p id="report-meta" class="text-slate-500 text-xs mt-0.5"></p>
         </div>
-        <div class="flex items-center gap-3">
-          <button id="download-csv-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition">
-            <i class="fa-solid fa-file-csv"></i>
-            <span>Export to Google Sheets CSV</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="download-csv-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
           </button>
-          <button id="retake-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition">
-            <i class="fa-solid fa-rotate-left"></i>
-            <span>Start New Session</span>
+          <button id="view-analytics-from-report-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-chart-line"></i> Historical Analytics
+          </button>
+          <button id="retake-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-rotate-left"></i> Retake
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
-        <div class="p-4 bg-slate-50 rounded-xl border text-center">
-          <div class="text-xs font-semibold text-slate-500 uppercase">Attempted / Total</div>
-          <div id="stat-total" class="text-2xl font-bold text-slate-800 mt-1">0</div>
-        </div>
-        <div class="p-4 bg-emerald-50 rounded-xl border text-center">
-          <div class="text-xs font-semibold text-emerald-700 uppercase">Correct</div>
-          <div id="stat-correct" class="text-2xl font-bold text-emerald-700 mt-1">0</div>
-        </div>
-        <div class="p-4 bg-rose-50 rounded-xl border text-center">
-          <div class="text-xs font-semibold text-rose-700 uppercase">Incorrect</div>
-          <div id="stat-incorrect" class="text-2xl font-bold text-rose-700 mt-1">0</div>
-        </div>
-        <div class="p-4 bg-blue-50 rounded-xl border text-center">
-          <div class="text-xs font-semibold text-blue-700 uppercase">Accuracy Score</div>
-          <div id="stat-percentage" class="text-2xl font-extrabold text-blue-700 mt-1">0%</div>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Itemized Valuation & Rationale</h3>
-        <span class="text-xs text-slate-500">Auto-formatted for Google Sheet columns</span>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 my-5">
+        <div class="p-3.5 bg-slate-50 rounded-xl border text-center"><div class="text-[11px] font-semibold text-slate-500 uppercase">Attempted / Total</div><div id="stat-total" class="text-xl sm:text-2xl font-bold mt-1">0</div></div>
+        <div class="p-3.5 bg-emerald-50 rounded-xl border text-center"><div class="text-[11px] font-semibold text-emerald-700 uppercase">Correct</div><div id="stat-correct" class="text-xl sm:text-2xl font-bold text-emerald-700 mt-1">0</div></div>
+        <div class="p-3.5 bg-rose-50 rounded-xl border text-center"><div class="text-[11px] font-semibold text-rose-700 uppercase">Incorrect</div><div id="stat-incorrect" class="text-xl sm:text-2xl font-bold text-rose-700 mt-1">0</div></div>
+        <div class="p-3.5 bg-blue-50 rounded-xl border text-center"><div class="text-[11px] font-semibold text-blue-700 uppercase">Accuracy</div><div id="stat-percentage" class="text-xl sm:text-2xl font-extrabold text-blue-700 mt-1">0%</div></div>
       </div>
 
       <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[420px] custom-scrollbar shadow-inner">
         <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200 font-semibold">
+          <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b">
             <tr>
-              <th class="p-3">Q#</th>
-              <th class="p-3">Domain</th>
-              <th class="p-3">Your Ans</th>
-              <th class="p-3">Correct Ans</th>
-              <th class="p-3">Status</th>
-              <th class="p-3">Official Rule / Rationale</th>
+              <th class="p-2.5">Q#</th>
+              <th class="p-2.5">Tier</th>
+              <th class="p-2.5">Domain</th>
+              <th class="p-2.5">Jasna's Ans</th>
+              <th class="p-2.5">Correct</th>
+              <th class="p-2.5">Status</th>
+              <th class="p-2.5">Coding Rationale</th>
             </tr>
           </thead>
           <tbody id="valuation-tbody" class="divide-y divide-slate-100"></tbody>
@@ -243,555 +387,270 @@
     </div>
   </div>
 
-  <footer class="text-center py-3 text-xs text-slate-400">
-    Unlimited Medical Coding Certification Engine &copy; 2026
+  <!-- ==================== 5. HISTORICAL ANALYTICS & IMPROVEMENT SCREEN ==================== -->
+  <div id="history-window" class="hidden flex-1 p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-200 gap-3">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">Stored Improvement History</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Jasna's Performance Tracking Over Time</h2>
+          <p class="text-slate-500 text-xs">All past sessions are automatically preserved in browser storage.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="history-back-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-arrow-left"></i> Back to Main
+          </button>
+          <button id="history-clear-btn" class="text-xs text-rose-600 hover:underline px-2 py-1">Clear History</button>
+        </div>
+      </div>
+
+      <!-- Trend Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-5">
+        <div class="p-4 bg-slate-50 rounded-xl border">
+          <div class="text-xs font-semibold text-slate-500">Total Exams Completed</div>
+          <div id="hist-total-sessions" class="text-2xl font-bold text-slate-800 mt-1">0</div>
+        </div>
+        <div class="p-4 bg-emerald-50 rounded-xl border">
+          <div class="text-xs font-semibold text-emerald-700">Average Historical Score</div>
+          <div id="hist-avg-score" class="text-2xl font-bold text-emerald-700 mt-1">0%</div>
+        </div>
+        <div class="p-4 bg-indigo-50 rounded-xl border">
+          <div class="text-xs font-semibold text-indigo-700">Highest Score Achieved</div>
+          <div id="hist-peak-score" class="text-2xl font-bold text-indigo-700 mt-1">0%</div>
+        </div>
+      </div>
+
+      <!-- Historical Session Table -->
+      <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Previous Exam Sessions</h3>
+      <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-72 custom-scrollbar">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b">
+            <tr>
+              <th class="p-2.5">Date & Time</th>
+              <th class="p-2.5">Questions</th>
+              <th class="p-2.5">Score</th>
+              <th class="p-2.5">Accuracy</th>
+              <th class="p-2.5">Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-2.5 text-xs text-slate-400">
+    Medical Coding Portal &copy; 2026 &bull; Hakkeem &amp; Jasna
   </footer>
 
-  <!-- ==================== 4. UNLIMITED PROCEDURAL GENERATOR SCRIPT ==================== -->
+  <!-- ==================== SCRIPT ENGINE ==================== -->
   <script>
-    // Procedural Generator Engine for Medical Coding Exam Preparation
-    const anatomicSites = [
-      { site: "forehead", group: "face/ears/eyelids/nose/lips", simple: "12011-12018", intermediate: "12051-12057", complex: "13151-13153" },
-      { site: "scalp", group: "scalp/neck/axillae/external genitalia/trunk/extremities", simple: "12001-12007", intermediate: "12041-12047", complex: "13120-13122" },
-      { site: "arm", group: "scalp/neck/axillae/external genitalia/trunk/extremities", simple: "12001-12007", intermediate: "12041-12047", complex: "13120-13122" },
-      { site: "lower leg", group: "scalp/neck/axillae/external genitalia/trunk/extremities", simple: "12001-12007", intermediate: "12041-12047", complex: "13120-13122" },
-      { site: "hand", group: "hands/feet/extremities", simple: "12001-12007", intermediate: "12041-12047", complex: "13131-13133" },
-      { site: "cheek", group: "face/ears/eyelids/nose/lips", simple: "12011-12018", intermediate: "12051-12057", complex: "13151-13153" }
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // 500 Question Procedural Generation
+    const anatomyBase = [
+      { d: "Integumentary System", q: "The outermost layer of the epidermis consisting of dead keratinocytes is the:", o: ["Stratum basale", "Stratum corneum", "Stratum spinosum", "Stratum granulosum"], a: "B", r: "The stratum corneum contains dead cells that slough off." },
+      { d: "Integumentary System", q: "Subcutaneous tissue is primarily composed of which type of tissue?", o: ["Dense regular connective tissue", "Adipose and loose connective tissue", "Hyaline cartilage", "Stratified squamous epithelium"], a: "B", r: "Hypodermis / subcutaneous layer is largely adipose." },
+      { d: "Integumentary System", q: "What term describes the surgical removal of dead or infected tissue from a wound?", o: ["Debridement", "Desiccation", "Dermabrasion", "Fulguration"], a: "A", r: "Debridement is the surgical excision of nonviable tissue." },
+      { d: "Integumentary System", q: "In CPT coding, repair of a wound involving layered closure of subcutaneous tissues is classified as:", o: ["Simple", "Intermediate", "Complex", "Extensive"], a: "B", r: "Layered closure meets intermediate repair definition." },
+      { d: "Integumentary System", q: "The crescent-shaped white area at the base of a human nail is termed the:", o: ["Eponychium", "Hyponychium", "Lunula", "Perionychium"], a: "C", r: "The lunula is the white half-moon shape." },
+      { d: "Musculoskeletal System", q: "A fracture where bone breaks through the skin surface is known as:", o: ["Closed fracture", "Greenstick fracture", "Compound (Open) fracture", "Pathologic fracture"], a: "C", r: "Open/compound fracture pierces skin." },
+      { d: "Musculoskeletal System", q: "The distal end of the fibula forms which prominent lateral ankle landmark?", o: ["Medial malleolus", "Lateral malleolus", "Olecranon", "Patella"], a: "B", r: "Lateral malleolus is formed by the distal fibula." },
+      { d: "Musculoskeletal System", q: "What type of joint is freely movable and surrounded by a capsule containing fluid?", o: ["Synarthrodial joint", "Amphiarthrodial joint", "Synovial (Diarthrodial) joint", "Fibrous joint"], a: "C", r: "Synovial joints allow free movement." },
+      { d: "Musculoskeletal System", q: "Surgical repair or reconstruction of a joint is medically termed:", o: ["Arthrotomy", "Arthrocentesis", "Arthrodesis", "Arthroplasty"], a: "D", r: "-plasty denotes repair/replacement; arthroplasty is joint repair." },
+      { d: "Musculoskeletal System", q: "The C1 vertebra articulating with the occipital bone is called the:", o: ["Axis", "Atlas", "Sacrum", "Coccyx"], a: "B", r: "C1 is Atlas; C2 is Axis." },
+      { d: "Respiratory System", q: "The leaf-shaped flap of cartilage that prevents food from entering the trachea during swallowing is the:", o: ["Cricoid cartilage", "Epiglottis", "Thyroid cartilage", "Carina"], a: "B", r: "Epiglottis covers the larynx while swallowing." },
+      { d: "Respiratory System", q: "Gas exchange in the lungs takes place across the walls of microscopic air sacs known as:", o: ["Bronchi", "Bronchioles", "Alveoli", "Pleural spaces"], a: "C", r: "Alveoli are the primary sites of pulmonary gas exchange." },
+      { d: "Respiratory System", q: "Puncture of the chest wall with a needle to aspirate fluid from the pleural space is called:", o: ["Thoracotomy", "Thoracentesis", "Bronchoscopy", "Tracheostomy"], a: "B", r: "-centesis indicates surgical puncture to aspirate fluid." },
+      { d: "Respiratory System", q: "The bifurcation point where the trachea divides into right and left primary bronchi is the:", o: ["Carina", "Hilum", "Glottis", "Mediastinum"], a: "A", r: "Carina is the cartilaginous ridge at tracheal bifurcation." },
+      { d: "Cardiovascular System", q: "Blood flowing from the right ventricle passes through which valve into the pulmonary artery?", o: ["Tricuspid valve", "Mitral valve", "Aortic valve", "Pulmonic valve"], a: "D", r: "Pulmonic valve leads from right ventricle to pulmonary trunk." },
+      { d: "Cardiovascular System", q: "The natural pacemaker of the heart is normally the:", o: ["Atrioventricular (AV) node", "Bundle of His", "Sinoatrial (SA) node", "Purkinje fibers"], a: "C", r: "SA node initiates cardiac impulses." },
+      { d: "Cardiovascular System", q: "Hardening and narrowing of arteries due to atheromatous plaque buildup is termed:", o: ["Arteriosclerosis", "Atherosclerosis", "Angiospasm", "Aneurysm"], a: "B", r: "Atherosclerosis is plaque-specific arterial hardening." },
+      { d: "Digestive System", q: "Wave-like involuntary muscular contractions that propel food along the alimentary canal are:", o: ["Mastication", "Deglutition", "Peristalsis", "Churning"], a: "C", r: "Peristalsis propels contents through the digestive tract." },
+      { d: "Digestive System", q: "Bile is produced by the liver and stored in which organ?", o: ["Pancreas", "Duodenum", "Gallbladder", "Spleen"], a: "C", r: "Gallbladder stores and concentrates bile." },
+      { d: "Digestive System", q: "The first and shortest section of the small intestine is the:", o: ["Jejunum", "Ileum", "Cecum", "Duodenum"], a: "D", r: "Duodenum connects stomach to jejunum." }
     ];
 
-    const lesionTypes = [
-      { type: "benign nevus", series: "11400-11446", nature: "benign" },
-      { type: "seborrheic keratosis", series: "11400-11446", nature: "benign" },
-      { type: "basal cell carcinoma", series: "11600-11646", nature: "malignant" },
-      { type: "squamous cell carcinoma", series: "11600-11646", nature: "malignant" },
-      { type: "melanoma in situ", series: "11600-11646", nature: "malignant" }
+    const sites = ["forehead", "scalp", "arm", "lower leg", "hand", "cheek", "back", "chest"];
+    const lesions = [{ t: "benign nevus", n: "benign" }, { t: "seborrheic keratosis", n: "benign" }, { t: "basal cell carcinoma", n: "malignant" }, { t: "squamous cell carcinoma", n: "malignant" }];
+    const mods = [
+      { m: "Modifier 24", d: "Unrelated E/M by same physician during postoperative period", w: ["Modifier 25", "Modifier 57", "Modifier 59"] },
+      { m: "Modifier 25", d: "Significant, separately identifiable E/M on day of procedure", w: ["Modifier 24", "Modifier 51", "Modifier 58"] },
+      { m: "Modifier 50", d: "Bilateral procedure performed at same operative session", w: ["Modifier 51", "Modifier 59", "Modifier 76"] },
+      { m: "Modifier 51", d: "Multiple procedures during same session other than E/M or add-ons", w: ["Modifier 50", "Modifier 59", "Modifier 78"] },
+      { m: "Modifier 58", d: "Staged or related procedure during postoperative period", w: ["Modifier 78", "Modifier 79", "Modifier 59"] },
+      { m: "Modifier 78", d: "Unplanned return to OR for related procedure during post-op period", w: ["Modifier 58", "Modifier 79", "Modifier 24"] },
+      { m: "Modifier 79", d: "Unrelated procedure by same physician during post-op period", w: ["Modifier 58", "Modifier 78", "Modifier 59"] },
+      { m: "Modifier 59", d: "Distinct procedural service not normally reported together", w: ["Modifier 51", "Modifier 76", "Modifier 25"] }
     ];
 
-    const modifiersMatrix = [
-      { mod: "Modifier 24", desc: "Unrelated E/M service by same physician during a post-op period", wrong: ["Modifier 25", "Modifier 57", "Modifier 59"] },
-      { mod: "Modifier 25", desc: "Significant, separately identifiable E/M on the day of a procedure", wrong: ["Modifier 24", "Modifier 51", "Modifier 58"] },
-      { mod: "Modifier 50", desc: "Bilateral procedure performed at the same session", wrong: ["Modifier 51", "Modifier 59", "Modifier 76"] },
-      { mod: "Modifier 51", desc: "Multiple procedures during same session other than E/M or add-on codes", wrong: ["Modifier 50", "Modifier 59", "Modifier 78"] },
-      { mod: "Modifier 58", desc: "Staged or related procedure by same physician during postoperative period", wrong: ["Modifier 78", "Modifier 79", "Modifier 59"] },
-      { mod: "Modifier 78", desc: "Unplanned return to operating room for a related procedure during post-op period", wrong: ["Modifier 58", "Modifier 79", "Modifier 24"] },
-      { mod: "Modifier 79", desc: "Unrelated procedure by same physician during the postoperative period", wrong: ["Modifier 58", "Modifier 78", "Modifier 59"] },
-      { mod: "Modifier 59", desc: "Distinct procedural service that is not normally reported together", wrong: ["Modifier 51", "Modifier 76", "Modifier 25"] },
-      { mod: "Modifier 26", desc: "Professional component only of a diagnostic or therapeutic procedure", wrong: ["Modifier TC", "Modifier 52", "Modifier 53"] },
-      { mod: "Modifier TC", desc: "Technical component only of a diagnostic procedure (facility overhead/equipment)", wrong: ["Modifier 26", "Modifier 52", "Modifier 76"] }
-    ];
+    function generateProceduralQuestion(i) {
+      const keys = ["A", "B", "C", "D"];
+      const slot = (i * 7 + 3) % 4;
 
-    const clinicalScenarioGenerators = [
-      // Generator 1: Lesion Excision Math
-      (id) => {
-        const siteObj = anatomicSites[id % anatomicSites.length];
-        const lesionObj = lesionTypes[id % lesionTypes.length];
-        const diameter = ((id % 5) + 1.2).toFixed(1);
-        const margin = (0.2 + (id % 4) * 0.1).toFixed(1);
-        const totalExcision = (parseFloat(diameter) + 2 * parseFloat(margin)).toFixed(1);
-        const wrong1 = (parseFloat(diameter) + parseFloat(margin)).toFixed(1);
-        const wrong2 = (parseFloat(diameter)).toFixed(1);
-        const wrong3 = (parseFloat(diameter) + 3 * parseFloat(margin)).toFixed(1);
-
-        const options = [
-          `${totalExcision} cm (${diameter} cm diameter + 2 × ${margin} cm margins)`,
-          `${wrong1} cm (${diameter} cm diameter + single ${margin} cm margin)`,
-          `${wrong2} cm (measured by lesion diameter only)`,
-          `${wrong3} cm (including deep subcutaneous margin)`
-        ];
-        // Shuffle options deterministically
+      // STEP 1: Simple (0 to 180)
+      if (i < 180) {
+        const item = anatomyBase[i % anatomyBase.length];
+        const correct = item.o[keys.indexOf(item.a)];
+        const wrong = item.o.filter((_, idx) => keys[idx] !== item.a);
+        const opts = []; let wIdx = 0;
+        for (let s = 0; s < 4; s++) {
+          if (s === slot) opts.push(correct);
+          else opts.push(wrong[wIdx++]);
+        }
         return {
-          id: id + 1,
-          domain: "CPT Surgery - Integumentary",
-          q: `A surgeon excises a ${diameter} cm ${lesionObj.type} from the patient's ${siteObj.site}. The operative report documents an excised margin of ${margin} cm on all sides. For CPT code selection, what is the correct excised diameter to report?`,
-          options: options,
-          ans: "A",
-          rationale: `Per CPT guidelines for excision of ${lesionObj.nature} lesions, code selection is determined by the maximum lesion diameter plus the margin required on both sides (diameter + 2 × margin = ${totalExcision} cm).`
-        };
-      },
-
-      // Generator 2: Repair Complexities & Summing Rules
-      (id) => {
-        const site = anatomicSites[id % anatomicSites.length];
-        const len1 = ((id % 4) + 1.5).toFixed(1);
-        const len2 = ((id % 3) + 2.0).toFixed(1);
-        const sum = (parseFloat(len1) + parseFloat(len2)).toFixed(1);
-        return {
-          id: id + 1,
-          domain: "CPT Surgery - Integumentary",
-          q: `A patient presents following trauma with two lacerations on the ${site.site}: one measuring ${len1} cm and another measuring ${len2} cm. Both require layered closure of subcutaneous tissue and superficial fascia. How are these repairs coded in CPT?`,
-          options: [
-            `Add the lengths together (${sum} cm total) and bill a single intermediate repair code`,
-            `Report two separate intermediate codes with modifier 59 appended to the second code`,
-            `Code only the larger ${Math.max(len1, len2)} cm laceration as an intermediate repair`,
-            `Code the repairs as a complex repair due to multiple laceration sites`
-          ],
-          ans: "A",
-          rationale: `Per CPT repair guidelines, lengths of laceration closures within the same anatomical classification group and identical complexity level (intermediate) are summed together into a single code.`
-        };
-      },
-
-      // Generator 3: Modifiers Matrix
-      (id) => {
-        const item = modifiersMatrix[id % modifiersMatrix.length];
-        const opts = [item.mod, item.wrong[0], item.wrong[1], item.wrong[2]];
-        return {
-          id: id + 1,
-          domain: "CPT Modifiers & Rules",
-          q: `Which modifier is appropriate for reporting: "${item.desc}"?`,
+          tier: "Simple",
+          domain: item.d,
+          q: item.q,
           options: opts,
-          ans: "A",
-          rationale: `${item.mod} is defined in CPT Appendix A as: ${item.desc}.`
-        };
-      },
-
-      // Generator 4: ICD-10-CM Coding Guidelines
-      (id) => {
-        const icdRules = [
-          { q: "In ICD-10-CM, when a code requires a 7th character for encounter type (e.g. initial, subsequent, sequela) but the code only has 4 or 5 characters, what placeholder is used?", correct: "Placeholder 'X'", w: ["Placeholder 'Z'", "Placeholder '0'", "Placeholder '9'"], r: "Placeholder character 'X' is mandatory in ICD-10-CM to reserve room for code expansion and fulfill 7th character rules." },
-          { q: "Under ICD-10-CM guidelines, how should a documented condition described as both 'acute' and 'chronic' be sequenced when separate codes exist?", correct: "Sequence the acute code first, followed by the chronic code", w: ["Sequence the chronic code first, followed by acute", "Report only the acute condition", "Report only the chronic condition"], r: "ICD-10-CM Section I.B.8 specifies: if the same condition is described as both acute and chronic, sequence acute first." },
-          { q: "Which convention in ICD-10-CM denotes a pure 'NOT CODED HERE' and indicates that two conditions cannot occur together?", correct: "Excludes1", w: ["Excludes2", "Code first", "Use additional code"], r: "Excludes1 is an instructional note signifying mutual exclusion between conditions." },
-          { q: "An Excludes2 note in ICD-10-CM indicates:", correct: "Not included here, but the patient may have both conditions concurrently", w: ["Never code together under any circumstance", "Mutually exclusive manifestation", "Code must be sequenced as principal diagnosis"], r: "Excludes2 means 'Not included here'—it is acceptable to code both conditions together if documentation supports it." },
-          { q: "What does the abbreviation 'NEC' indicate in the Alphabetic Index and Tabular List?", correct: "Not Elsewhere Classified ('other specified')", w: ["Not Elsewhere Coded", "Non-Essential Condition", "No External Cause"], r: "NEC represents 'other specified' when the medical record documents specific detail not yet with an individual code." },
-          { q: "A patient sustains burns that are healing. Months later, scar contracture limits joint movement. The scar contracture is coded as a:", correct: "Sequela (late effect)", w: ["Acute complication", "Adverse effect", "Underdosing"], r: "A sequela is the residual condition remaining after the acute phase of an injury or illness has concluded." }
-        ];
-        const rObj = icdRules[id % icdRules.length];
-        return {
-          id: id + 1,
-          domain: "ICD-10-CM Official Guidelines",
-          q: rObj.q,
-          options: [rObj.correct, rObj.w[0], rObj.w[1], rObj.w[2]],
-          ans: "A",
-          rationale: rObj.r
-        };
-      },
-
-      // Generator 5: Musculoskeletal & Fracture Coding
-      (id) => {
-        const bones = [
-          { bone: "distal radius (Colles' fracture)", loc: "wrist", fixation: "closed reduction with percutaneous skeletal pinning" },
-          { bone: "femoral shaft", loc: "thigh", fixation: "open reduction with internal fixation (ORIF) with intramedullary rod" },
-          { bone: "bimalleolar ankle", loc: "ankle", fixation: "open reduction with plate and screw fixation" },
-          { bone: "clavicle", loc: "shoulder girdle", fixation: "closed treatment without manipulation" }
-        ];
-        const b = bones[id % bones.length];
-        return {
-          id: id + 1,
-          domain: "CPT Surgery - Musculoskeletal",
-          q: `A physician performs treatment for a displaced fracture of the ${b.bone}. The operative note states: '${b.fixation}'. What key element determines the CPT code category for fracture care?`,
-          options: [
-            "Whether treatment was open or closed, with or without manipulation/fixation",
-            "The specific brand or manufacturer of the hardware used",
-            "The time taken to apply the cast or splint",
-            "Whether the patient was admitted to observation or inpatient"
-          ],
-          ans: "A",
-          rationale: "In CPT musculoskeletal coding, fracture treatment codes are categorized by treatment approach (closed, open, percutaneous) and whether manipulation/fixation was performed."
-        };
-      },
-
-      // Generator 6: Cardiovascular, Endoscopy, and E/M Rules
-      (id) => {
-        const scenarios = [
-          {
-            d: "CPT Surgery - Cardiovascular",
-            q: "A patient undergoes Coronary Artery Bypass Graft (CABG). The surgeon uses the internal mammary artery for one graft and two segments of saphenous vein for two additional grafts. How is this reported in CPT?",
-            opts: ["Code both the combined arterial-venous graft code and the venous graft add-on code", "Report only the arterial graft code", "Report three single venous graft codes with modifier 51", "Report an unlisted cardiovascular procedure code"],
-            ans: "A",
-            r: "When CABG uses both arterial and venous conduits, CPT requires reporting the combined arterial-venous graft code plus appropriate add-on codes for the venous segments."
-          },
-          {
-            d: "CPT Surgery - Digestive",
-            q: "During a diagnostic colonoscopy, the physician visualizes the cecum and performs a hot biopsy forceps polypectomy of a 6 mm polyp in the sigmoid colon, and cold snare removal of an 8 mm polyp in the ascending colon. How are these reported?",
-            opts: ["Code both polypectomy techniques (hot biopsy code and snare code)", "Code only the snare polypectomy because it was the larger polyp", "Code a single colonoscopy with biopsy code with modifier 22", "Combine both polyps into a partial colectomy code"],
-            ans: "A",
-            r: "When distinct colon polyps are removed using different techniques (e.g. snare vs hot biopsy), both CPT codes are reported, appending modifier 59/XS to the secondary procedure."
-          },
-          {
-            d: "CPT Evaluation & Management (E/M)",
-            q: "According to current AMA E/M guidelines for office and outpatient visits (99202-99215), the code level is determined by:",
-            opts: ["Medical Decision Making (MDM) OR total physician/QHP time spent on encounter date", "Documenting at least 12 organ systems in the physical exam", "The duration of face-to-face counseling exceeding 50% only", "The chief complaint complexity combined with past medical history"],
-            ans: "A",
-            r: "Office/outpatient E/M codes are selected based on either the level of Medical Decision Making (MDM) or total encounter time."
-          },
-          {
-            d: "CPT Surgery - Urinary & Male Genital",
-            q: "Cystourethroscopy with transurethral resection of a 2.5 cm bladder tumor is performed. Which surgical measurement parameter dictates CPT code selection?",
-            opts: ["Tumor size classification: minor (<0.5 cm), small (0.5 to 2.0 cm), medium (2.0 to 5.0 cm), or large (>5.0 cm)", "The depth of bladder wall perforation", "The volume of irrigation fluid used during endoscopy", "The operating room anesthesia time"],
-            ans: "A",
-            r: "TURBT (transurethral resection of bladder tumor) codes are differentiated by tumor size (e.g. small 0.5-2.0 cm, medium 2.0-5.0 cm, large >5.0 cm)."
-          }
-        ];
-        const s = scenarios[id % scenarios.length];
-        return {
-          id: id + 1,
-          domain: s.d,
-          q: s.q,
-          options: s.opts,
-          ans: s.ans,
-          rationale: s.r
+          ans: keys[slot],
+          rationale: item.r
         };
       }
-    ];
 
-    // Shuffle helper to vary option positions
-    function buildDynamicQuestion(index) {
-      const generatorFn = clinicalScenarioGenerators[index % clinicalScenarioGenerators.length];
-      const raw = generatorFn(index);
-
-      // Randomize option placements based on question index seed
-      const letterKeys = ["A", "B", "C", "D"];
-      const correctText = raw.options[0];
-      const distractors = [raw.options[1], raw.options[2], raw.options[3]];
-
-      // Determine correct option slot (A, B, C, or D) based on deterministic index hash
-      const targetSlot = (index * 7 + 3) % 4; // 0=A, 1=B, 2=C, 3=D
-      const newOptions = [];
-      let distractorIdx = 0;
-
-      for (let i = 0; i < 4; i++) {
-        if (i === targetSlot) {
-          newOptions.push(correctText);
+      // STEP 2: Intermediate (180 to 340)
+      if (i < 340) {
+        if (i % 2 === 0) {
+          const m = mods[(i - 180) % mods.length];
+          const opts = []; let wIdx = 0;
+          for (let s = 0; s < 4; s++) {
+            if (s === slot) opts.push(m.m);
+            else opts.push(m.w[wIdx++]);
+          }
+          return {
+            tier: "Intermediate",
+            domain: "CPT Modifiers",
+            q: `Which modifier is reported for: "${m.d}"?`,
+            options: opts,
+            ans: keys[slot],
+            rationale: `${m.m} is the official CPT definition for: ${m.d}.`
+          };
         } else {
-          newOptions.push(distractors[distractorIdx++]);
+          const rules = [
+            { q: "In ICD-10-CM, what character is used as a dummy placeholder for expansion to satisfy 7-character code rules?", c: "Placeholder 'X'", w: ["Placeholder 'Z'", "Placeholder '0'", "Placeholder '9'"], r: "Character 'X' serves as placeholder in ICD-10-CM." },
+            { q: "Under ICD-10-CM guidelines, how is a condition described as both 'acute' and 'chronic' sequenced?", c: "Sequence acute first, followed by chronic", w: ["Sequence chronic first", "Report acute only", "Report chronic only"], r: "Section I.B.8 directs acute sequencing before chronic." },
+            { q: "Which convention in ICD-10-CM indicates 'NOT CODED HERE' and mutual exclusivity?", c: "Excludes1", w: ["Excludes2", "Code first", "Includes"], r: "Excludes1 denotes conditions that can never be coded together." },
+            { q: "What does an Excludes2 note indicate in ICD-10-CM?", c: "Not included here; acceptable to code both together if supported", w: ["Pure mutual exclusivity", "Manifestation code only", "Must never be reported"], r: "Excludes2 means 'Not included here'—both can be coded if present." }
+          ];
+          const r = rules[(i - 180) % rules.length];
+          const opts = []; let wIdx = 0;
+          for (let s = 0; s < 4; s++) {
+            if (s === slot) opts.push(r.c);
+            else opts.push(r.w[wIdx++]);
+          }
+          return {
+            tier: "Intermediate",
+            domain: "ICD-10-CM Guidelines",
+            q: r.q,
+            options: opts,
+            ans: keys[slot],
+            rationale: r.r
+          };
         }
+      }
+
+      // STEP 3: Advanced Scenarios & Calculations (340 to 500+)
+      const site = sites[i % sites.length];
+      const lesion = lesions[i % lesions.length];
+      const diam = ((i % 5) + 1.2).toFixed(1);
+      const margin = (0.2 + (i % 4) * 0.1).toFixed(1);
+      const total = (parseFloat(diam) + 2 * parseFloat(margin)).toFixed(1);
+
+      const correct = `${total} cm (${diam} cm diameter + 2 × ${margin} cm margins)`;
+      const distractors = [
+        `${(parseFloat(diam) + parseFloat(margin)).toFixed(1)} cm (${diam} cm diameter + single margin)`,
+        `${diam} cm (diameter only without margins)`,
+        `${(parseFloat(diam) + 3 * parseFloat(margin)).toFixed(1)} cm (including deep margins)`
+      ];
+
+      const opts = []; let dIdx = 0;
+      for (let s = 0; s < 4; s++) {
+        if (s === slot) opts.push(correct);
+        else opts.push(distractors[dIdx++]);
       }
 
       return {
-        id: index + 1,
-        domain: raw.domain,
-        q: raw.q,
-        options: newOptions,
-        ans: letterKeys[targetSlot],
-        rationale: raw.rationale
+        tier: "Advanced",
+        domain: "CPT Surgery - Integumentary",
+        q: `A surgeon excises a ${diam} cm ${lesion.t} from the patient's ${site}. Excised margins are documented as ${margin} cm on all sides. What is the correct excised diameter to report in CPT?`,
+        options: opts,
+        ans: keys[slot],
+        rationale: `Per CPT guidelines, excision code selection is based on the maximum lesion diameter plus narrowest margins multiplied by 2 (${diam} + 2 × ${margin} = ${total} cm).`
       };
     }
 
-    // App State
-    let targetMode = "unlimited"; // 'unlimited' or number
-    let sessionQuestionBank = [];
+    function buildDefault500Bank() {
+      const bank = [];
+      for (let i = 0; i < 500; i++) {
+        bank.push(generateProceduralQuestion(i));
+      }
+      return bank;
+    }
+
+    function getStoredBank() {
+      const stored = localStorage.getItem("medical_coding_500_bank");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.length >= 100) return parsed;
+        } catch(e){}
+      }
+      const freshBank = buildDefault500Bank();
+      localStorage.setItem("medical_coding_500_bank", JSON.stringify(freshBank));
+      return freshBank;
+    }
+
+    function saveStoredBank(bank) {
+      localStorage.setItem("medical_coding_500_bank", JSON.stringify(bank));
+      renderAdminTable();
+    }
+
+    // Historical Improvement Storage Helper
+    function getStoredHistory() {
+      const h = localStorage.getItem("jasna_coding_exam_history");
+      return h ? JSON.parse(h) : [];
+    }
+
+    function recordExamSession(record) {
+      const hist = getStoredHistory();
+      hist.unshift(record); // newest first
+      localStorage.setItem("jasna_coding_exam_history", JSON.stringify(hist));
+    }
+
+    let activeBank = getStoredBank();
+    let currentRole = "student";
+    let sessionQuestions = [];
     let currentIdx = 0;
     let userAnswers = {};
-    let flaggedQuestions = new Set();
+    let flagged = new Set();
     let timeLeft = 999999;
     let timerInterval = null;
-    let candidateName = "CANDIDATE-2026";
 
-    // DOM References
-    const loginModal = document.getElementById("login-modal");
-    const loginForm = document.getElementById("login-form");
-    const loginError = document.getElementById("login-error");
-    const examWindow = document.getElementById("exam-window");
-    const reportWindow = document.getElementById("report-window");
+    // Login Role Toggle
+    const tabStudentBtn = document.getElementById("tab-student-btn");
+    const tabAdminBtn = document.getElementById("tab-admin-btn");
+    const loginUser = document.getElementById("login-user");
+    const loginPass = document.getElementById("login-pass");
+    const loginTitle = document.getElementById("login-title");
+    const loginSubtitle = document.getElementById("login-subtitle");
+    const studentOptions = document.getElementById("student-options");
+    const passHint = document.getElementById("pass-hint");
+    const submitBtnText = document.getElementById("submit-btn-text");
 
-    const activeCandidateEl = document.getElementById("active-candidate");
-    const timerDisplay = document.getElementById("timer-display");
-    const endExamBtn = document.getElementById("end-exam-btn");
-
-    const qCategoryEl = document.getElementById("q-category");
-    const qNumberEl = document.getElementById("q-number");
-    const qStemEl = document.getElementById("q-stem");
-    const optionsListEl = document.getElementById("options-list");
-    const markReviewBtn = document.getElementById("mark-review-btn");
-    const paletteGrid = document.getElementById("palette-grid");
-    const paletteCountEl = document.getElementById("palette-count");
-
-    const prevBtn = document.getElementById("prev-btn");
-    const nextBtn = document.getElementById("next-btn");
-    const clearBtn = document.getElementById("clear-btn");
-
-    // Login Submission
-    loginForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const pass = document.getElementById("exam-password").value.trim();
-      const cand = document.getElementById("candidate-id").value.trim();
-      targetMode = document.getElementById("exam-mode-select").value;
-      const mins = parseInt(document.getElementById("exam-timer-select").value);
-
-      if (pass !== "code2026") {
-        loginError.classList.remove("hidden");
-        return;
-      }
-
-      candidateName = cand || "CANDIDATE-2026";
-      activeCandidateEl.textContent = `Candidate: ${candidateName}`;
-
-      loginModal.classList.add("hidden");
-      examWindow.classList.remove("hidden");
-      examWindow.classList.add("flex");
-
-      // Generate initial batch of questions
-      const initialSize = targetMode === "unlimited" ? 50 : parseInt(targetMode);
-      sessionQuestionBank = [];
-      for (let i = 0; i < initialSize; i++) {
-        sessionQuestionBank.push(buildDynamicQuestion(i));
-      }
-
-      timeLeft = mins * 60;
-      initExam();
-    });
-
-    function initExam() {
-      userAnswers = {};
-      flaggedQuestions.clear();
-      currentIdx = 0;
-      buildPalette();
-      loadQuestion(0);
-      startTimer();
-    }
-
-    function startTimer() {
-      clearInterval(timerInterval);
-      if (timeLeft > 50000) {
-        timerDisplay.textContent = "Untimed";
-        return;
-      }
-      timerInterval = setInterval(() => {
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          finalizeExam();
-          return;
-        }
-        timeLeft--;
-        const hrs = String(Math.floor(timeLeft / 3600)).padStart(2, "0");
-        const mins = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, "0");
-        const secs = String(timeLeft % 60).padStart(2, "0");
-        timerDisplay.textContent = `${hrs}:${mins}:${secs}`;
-      }, 1000);
-    }
-
-    function buildPalette() {
-      paletteGrid.innerHTML = "";
-      sessionQuestionBank.forEach((q, idx) => {
-        const btn = document.createElement("button");
-        btn.id = `palette-btn-${idx}`;
-        btn.className = "palette-btn bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300";
-        btn.textContent = idx + 1;
-        btn.onclick = () => loadQuestion(idx);
-        paletteGrid.appendChild(btn);
-      });
-      updatePaletteCount();
-    }
-
-    function updatePaletteCount() {
-      const answeredCount = Object.keys(userAnswers).length;
-      paletteCountEl.textContent = `${answeredCount} / ${sessionQuestionBank.length} Done`;
-    }
-
-    function updatePaletteItem(idx) {
-      const btn = document.getElementById(`palette-btn-${idx}`);
-      if (!btn) return;
-
-      const isAnswered = userAnswers[idx] !== undefined;
-      const isFlagged = flaggedQuestions.has(idx);
-      const isCurrent = idx === currentIdx;
-
-      btn.className = "palette-btn font-semibold transition";
-
-      if (isCurrent) {
-        btn.classList.add("ring-2", "ring-blue-600", "ring-offset-1");
-      }
-
-      if (isFlagged) {
-        btn.classList.add("bg-amber-500", "text-white");
-      } else if (isAnswered) {
-        btn.classList.add("bg-emerald-600", "text-white");
-      } else {
-        btn.classList.add("bg-slate-200", "text-slate-700", "hover:bg-slate-300");
-      }
-    }
-
-    function loadQuestion(idx) {
-      const oldIdx = currentIdx;
-      currentIdx = idx;
-      updatePaletteItem(oldIdx);
-      updatePaletteItem(currentIdx);
-      updatePaletteCount();
-
-      const q = sessionQuestionBank[idx];
-      qCategoryEl.textContent = q.domain;
-      qNumberEl.textContent = `Question ${idx + 1}${targetMode === "unlimited" ? " (Unlimited Mode)" : ` of ${sessionQuestionBank.length}`}`;
-      qStemEl.textContent = q.q;
-
-      if (flaggedQuestions.has(idx)) {
-        markReviewBtn.className = "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-500 bg-amber-50 text-amber-700";
-        markReviewBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i><span>Marked for Review</span>`;
-      } else {
-        markReviewBtn.className = "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50";
-        markReviewBtn.innerHTML = `<i class="fa-regular fa-bookmark"></i><span>Mark for Review</span>`;
-      }
-
-      const letters = ["A", "B", "C", "D"];
-      optionsListEl.innerHTML = "";
-      q.options.forEach((opt, optIdx) => {
-        const letter = letters[optIdx];
-        const isSelected = userAnswers[idx] === letter;
-
-        const card = document.createElement("label");
-        card.className = `flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition ${
-          isSelected 
-            ? "border-blue-600 bg-blue-50/70 text-blue-900 font-semibold shadow-sm" 
-            : "border-slate-200 hover:bg-slate-50 text-slate-700"
-        }`;
-        
-        card.innerHTML = `
-          <input type="radio" name="opt-radio" value="${letter}" ${isSelected ? "checked" : ""} class="hidden" />
-          <span class="w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold border ${
-            isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-600"
-          }">${letter}</span>
-          <span class="text-sm leading-relaxed">${opt}</span>
-        `;
-
-        card.onclick = () => {
-          userAnswers[idx] = letter;
-          loadQuestion(idx);
-        };
-
-        optionsListEl.appendChild(card);
-      });
-
-      prevBtn.disabled = idx === 0;
-
-      if (targetMode === "unlimited") {
-        nextBtn.innerHTML = `Next Question <i class="fa-solid fa-arrow-right ml-1.5"></i>`;
-      } else {
-        nextBtn.innerHTML = idx === sessionQuestionBank.length - 1 
-          ? `Submit Exam <i class="fa-solid fa-check ml-1.5"></i>` 
-          : `Next <i class="fa-solid fa-chevron-right ml-1.5"></i>`;
-      }
-    }
-
-    markReviewBtn.onclick = () => {
-      if (flaggedQuestions.has(currentIdx)) {
-        flaggedQuestions.delete(currentIdx);
-      } else {
-        flaggedQuestions.add(currentIdx);
-      }
-      loadQuestion(currentIdx);
+    tabStudentBtn.onclick = () => {
+      currentRole = "student";
+      tabStudentBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition bg-blue-600 text-white flex items-center justify-center gap-1.5";
+      tabAdminBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+      loginTitle.textContent = "Jasna's Examination Portal";
+      loginSubtitle.textContent = "AAPC / Prometric Testing Simulation & Valuation";
+      loginUser.value = "Jasna";
+      loginPass.value = "2026";
+      passHint.innerHTML = `Authorized candidate password: <span class="font-bold text-blue-600">2026</span>`;
+      studentOptions.classList.remove("hidden");
+      submitBtnText.textContent = "Start Exam Session";
     };
 
-    clearBtn.onclick = () => {
-      delete userAnswers[currentIdx];
-      loadQuestion(currentIdx);
-    };
-
-    prevBtn.onclick = () => {
-      if (currentIdx > 0) loadQuestion(currentIdx - 1);
-    };
-
-    nextBtn.onclick = () => {
-      if (currentIdx < sessionQuestionBank.length - 1) {
-        loadQuestion(currentIdx + 1);
-      } else {
-        if (targetMode === "unlimited") {
-          // Unlimited mode: automatically generate more questions continuously on the fly!
-          const nextIndex = sessionQuestionBank.length;
-          sessionQuestionBank.push(buildDynamicQuestion(nextIndex));
-
-          // Append to palette grid
-          const btn = document.createElement("button");
-          btn.id = `palette-btn-${nextIndex}`;
-          btn.className = "palette-btn bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300";
-          btn.textContent = nextIndex + 1;
-          btn.onclick = () => loadQuestion(nextIndex);
-          paletteGrid.appendChild(btn);
-
-          loadQuestion(nextIndex);
-        } else {
-          if (confirm("You are at the final question. Submit and generate valuation?")) {
-            finalizeExam();
-          }
-        }
-      }
-    };
-
-    endExamBtn.onclick = () => {
-      const answered = Object.keys(userAnswers).length;
-      if (confirm(`You have completed ${answered} of ${sessionQuestionBank.length} questions in this session.
-Do you wish to submit and view your valuation report?`)) {
-        finalizeExam();
-      }
-    };
-
-    function finalizeExam() {
-      clearInterval(timerInterval);
-      examWindow.classList.add("hidden");
-      examWindow.classList.remove("flex");
-      reportWindow.classList.remove("hidden");
-
-      let correctCount = 0;
-      const tbody = document.getElementById("valuation-tbody");
-      tbody.innerHTML = "";
-
-      sessionQuestionBank.forEach((q, idx) => {
-        const userChoice = userAnswers[idx] || "—";
-        const isCorrect = userChoice === q.ans;
-        if (isCorrect) correctCount++;
-
-        const tr = document.createElement("tr");
-        tr.className = isCorrect ? "hover:bg-slate-50" : "bg-rose-50/30 hover:bg-rose-50/50";
-        tr.innerHTML = `
-          <td class="p-3 font-semibold text-slate-700">${idx + 1}</td>
-          <td class="p-3 text-slate-600 font-medium">${q.domain}</td>
-          <td class="p-3 font-mono font-bold ${userChoice === '—' ? 'text-slate-400' : isCorrect ? 'text-emerald-700' : 'text-rose-600'}">${userChoice}</td>
-          <td class="p-3 font-mono font-bold text-slate-800">${q.ans}</td>
-          <td class="p-3 font-semibold">
-            <span class="px-2 py-0.5 rounded text-[11px] ${isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-              ${isCorrect ? 'CORRECT' : 'INCORRECT'}
-            </span>
-          </td>
-          <td class="p-3 text-slate-600 max-w-sm">${q.rationale}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      const totalAttempted = Object.keys(userAnswers).length;
-      const totalGenerated = sessionQuestionBank.length;
-      const incorrectCount = totalAttempted - correctCount;
-      const scorePct = totalAttempted > 0 ? Math.round((correctCount / totalAttempted) * 100) : 0;
-
-      document.getElementById("report-meta").textContent = `Candidate: ${candidateName} | Evaluated: ${new Date().toLocaleDateString()}`;
-      document.getElementById("stat-total").textContent = `${totalAttempted} / ${totalGenerated}`;
-      document.getElementById("stat-correct").textContent = correctCount;
-      document.getElementById("stat-incorrect").textContent = incorrectCount;
-      document.getElementById("stat-percentage").textContent = `${scorePct}%`;
-    }
-
-    // Google Sheets Compatible CSV Download
-    document.getElementById("download-csv-btn").onclick = () => {
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Q#,System / Domain,Question,Option A,Option B,Option C,Option D,Correct Answer,User Answer,Result,Rationale\n";
-
-      sessionQuestionBank.forEach((q, idx) => {
-        const userChoice = userAnswers[idx] || "";
-        const result = userChoice === "" ? "UNANSWERED" : (userChoice === q.ans ? "CORRECT" : "INCORRECT");
-        const row = [
-          idx + 1,
-          `"${q.domain}"`,
-          `"${q.q.replace(/"/g, '""')}"`,
-          `"${q.options[0].replace(/"/g, '""')}"`,
-          `"${q.options[1].replace(/"/g, '""')}"`,
-          `"${q.options[2].replace(/"/g, '""')}"`,
-          `"${q.options[3].replace(/"/g, '""')}"`,
-          `"${q.ans}"`,
-          `"${userChoice}"`,
-          `"${result}"`,
-          `"${q.rationale.replace(/"/g, '""')}"`
-        ];
-        csvContent += row.join(",") + "\n";
-      });
-
-      const link = document.createElement("a");
-      link.setAttribute("href", encodeURI(csvContent));
-      link.setAttribute("download", `Unlimited_Valuation_${candidateName}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
-
-    document.getElementById("retake-btn").onclick = () => {
-      reportWindow.classList.add("hidden");
-      loginModal.classList.remove("hidden");
-    };
-  </script>
-</body>
-</html>
+    tabAdminBtn.onclick = () => {
+      currentRole
