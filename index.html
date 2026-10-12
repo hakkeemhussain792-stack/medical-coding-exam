@@ -221,7 +221,7 @@
     </div>
   </div>
 
-  <!-- ==================== 3. STUDENT EXAM INTERFACE (MOBILE + LAPTOP OPTIMIZED) ==================== -->
+  <!-- ==================== 3. STUDENT EXAM INTERFACE ==================== -->
   <div id="exam-window" class="hidden flex-col h-screen overflow-hidden">
     <!-- Top Header -->
     <header class="bg-slate-900 text-white px-3 sm:px-6 py-2.5 flex items-center justify-between shadow-md border-b border-slate-800 z-10">
@@ -231,7 +231,7 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4">
-        <!-- Quick Question Jump Input (Header) -->
+        <!-- Quick Jump Input -->
         <div class="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1">
           <span class="text-[11px] text-slate-400 font-medium">Jump:</span>
           <input type="number" id="quick-jump-input" min="1" max="500" placeholder="#" class="w-12 bg-slate-900 text-white text-center text-xs rounded border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 py-0.5" />
@@ -244,7 +244,7 @@
           <span id="timer-display" class="font-mono text-xs sm:text-sm font-bold text-amber-400">Untimed</span>
         </div>
 
-        <!-- Mobile Palette Toggle Button -->
+        <!-- Mobile Palette Toggle -->
         <button id="mobile-palette-toggle-btn" class="lg:hidden bg-slate-800 hover:bg-slate-700 text-white text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1">
           <i class="fa-solid fa-table-cells"></i>
           <span class="text-[11px]">Grid</span>
@@ -298,7 +298,7 @@
         </div>
       </section>
 
-      <!-- Palette Drawer (Desktop Sidebar + Mobile Slide-Over) -->
+      <!-- Palette Drawer -->
       <aside id="palette-aside" class="fixed inset-y-0 right-0 z-30 w-72 sm:w-80 bg-slate-50 border-l border-slate-200 p-4 sm:p-5 flex flex-col justify-between transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out shadow-2xl lg:shadow-none">
         <div>
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
@@ -314,9 +314,7 @@
           <!-- Quick Dropdown Jump -->
           <div class="mb-3">
             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Select from dropdown:</label>
-            <select id="jump-dropdown-select" class="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500">
-              <!-- populated dynamically -->
-            </select>
+            <select id="jump-dropdown-select" class="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"></select>
           </div>
 
           <!-- Palette Grid -->
@@ -594,7 +592,7 @@
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          if (parsed && parsed.length >= 100) return parsed;
+          if (parsed && parsed.length >= 25) return parsed;
         } catch(e){}
       }
       const freshBank = buildDefault500Bank();
@@ -607,7 +605,6 @@
       renderAdminTable();
     }
 
-    // Historical Improvement Storage Helper
     function getStoredHistory() {
       const h = localStorage.getItem("jasna_coding_exam_history");
       return h ? JSON.parse(h) : [];
@@ -615,7 +612,7 @@
 
     function recordExamSession(record) {
       const hist = getStoredHistory();
-      hist.unshift(record); // newest first
+      hist.unshift(record);
       localStorage.setItem("jasna_coding_exam_history", JSON.stringify(hist));
     }
 
@@ -628,7 +625,7 @@
     let timeLeft = 999999;
     let timerInterval = null;
 
-    // Login Role Toggle
+    // Login Elements
     const tabStudentBtn = document.getElementById("tab-student-btn");
     const tabAdminBtn = document.getElementById("tab-admin-btn");
     const loginUser = document.getElementById("login-user");
@@ -638,6 +635,15 @@
     const studentOptions = document.getElementById("student-options");
     const passHint = document.getElementById("pass-hint");
     const submitBtnText = document.getElementById("submit-btn-text");
+    const loginError = document.getElementById("login-error");
+    const loginForm = document.getElementById("login-form");
+    const loginModal = document.getElementById("login-modal");
+
+    // Windows
+    const adminWindow = document.getElementById("admin-window");
+    const examWindow = document.getElementById("exam-window");
+    const reportWindow = document.getElementById("report-window");
+    const historyWindow = document.getElementById("history-window");
 
     tabStudentBtn.onclick = () => {
       currentRole = "student";
@@ -653,4 +659,595 @@
     };
 
     tabAdminBtn.onclick = () => {
-      currentRole
+      currentRole = "admin";
+      tabAdminBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition bg-indigo-600 text-white flex items-center justify-center gap-1.5";
+      tabStudentBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+      loginTitle.textContent = "Instructor Portal (Hakkeem)";
+      loginSubtitle.textContent = "Curriculum Management, Ingestion & Control";
+      loginUser.value = "Hakkeem";
+      loginPass.value = "admin2026";
+      passHint.innerHTML = `Instructor credential: <span class="font-bold text-indigo-600">admin2026</span>`;
+      studentOptions.classList.add("hidden");
+      submitBtnText.textContent = "Access Admin Dashboard";
+    };
+
+    function hideAllWindows() {
+      adminWindow.classList.add("hidden");
+      examWindow.classList.add("hidden");
+      examWindow.classList.remove("flex");
+      reportWindow.classList.add("hidden");
+      historyWindow.classList.add("hidden");
+      loginModal.classList.add("hidden");
+    }
+
+    loginForm.onsubmit = (e) => {
+      e.preventDefault();
+      loginError.classList.add("hidden");
+      const user = loginUser.value.trim();
+      const pass = loginPass.value.trim();
+
+      if (currentRole === "student") {
+        if (user.toLowerCase() === "jasna" && pass === "2026") {
+          hideAllWindows();
+          startStudentExam();
+        } else {
+          loginError.classList.remove("hidden");
+        }
+      } else {
+        if (user.toLowerCase() === "hakkeem" && pass === "admin2026") {
+          hideAllWindows();
+          adminWindow.classList.remove("hidden");
+          renderAdminTable();
+        } else {
+          loginError.classList.remove("hidden");
+        }
+      }
+    };
+
+    // ==================== EXAM ENGINE ====================
+    function startStudentExam() {
+      examWindow.classList.remove("hidden");
+      examWindow.classList.add("flex");
+
+      const mode = document.getElementById("exam-mode-select").value;
+      const timerVal = parseInt(document.getElementById("exam-timer-select").value, 10);
+
+      activeBank = getStoredBank();
+      let pool = [...activeBank];
+
+      if (mode === "all" || mode === "500") {
+        sessionQuestions = pool;
+      } else {
+        const count = parseInt(mode, 10);
+        sessionQuestions = pool.slice(0, Math.min(count, pool.length));
+      }
+
+      currentIdx = 0;
+      userAnswers = {};
+      flagged.clear();
+
+      // Timer Setup
+      clearInterval(timerInterval);
+      if (timerVal < 99999) {
+        timeLeft = timerVal * 60;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          updateTimerDisplay();
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            finishExam();
+          }
+        }, 1000);
+      } else {
+        document.getElementById("timer-display").textContent = "Untimed";
+      }
+
+      populateJumpDropdown();
+      renderPalette();
+      renderQuestion();
+    }
+
+    function updateTimerDisplay() {
+      const h = Math.floor(timeLeft / 3600);
+      const m = Math.floor((timeLeft % 3600) / 60);
+      const s = timeLeft % 60;
+      let str = "";
+      if (h > 0) str += `${h}:`;
+      str += `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+      document.getElementById("timer-display").textContent = str;
+    }
+
+    function populateJumpDropdown() {
+      const select = document.getElementById("jump-dropdown-select");
+      select.innerHTML = "";
+      sessionQuestions.forEach((q, idx) => {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = `Q ${idx + 1}: [${q.tier}] ${q.domain} - ${q.q.substring(0, 30)}...`;
+        select.appendChild(opt);
+      });
+      select.onchange = (e) => {
+        goToQuestion(parseInt(e.target.value, 10));
+      };
+    }
+
+    function renderQuestion() {
+      if (!sessionQuestions[currentIdx]) return;
+      const q = sessionQuestions[currentIdx];
+      const total = sessionQuestions.length;
+
+      document.getElementById("header-progress").textContent = `Q ${currentIdx + 1}/${total}`;
+      document.getElementById("q-number").textContent = `Question ${currentIdx + 1}`;
+      document.getElementById("q-tier-tag").textContent = `Step: ${q.tier}`;
+      document.getElementById("q-category").textContent = q.domain;
+      document.getElementById("q-stem").textContent = q.q;
+
+      // Review Later status
+      const markBtn = document.getElementById("mark-review-btn");
+      if (flagged.has(currentIdx)) {
+        markBtn.className = "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 transition";
+        markBtn.innerHTML = `<i class="fa-solid fa-bookmark text-amber-600"></i><span>Flagged for Review</span>`;
+      } else {
+        markBtn.className = "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition";
+        markBtn.innerHTML = `<i class="fa-regular fa-bookmark"></i><span>Review Later</span>`;
+      }
+
+      // Options
+      const letters = ["A", "B", "C", "D"];
+      const optList = document.getElementById("options-list");
+      optList.innerHTML = "";
+
+      const chosen = userAnswers[currentIdx];
+
+      q.options.forEach((optText, idx) => {
+        const letter = letters[idx];
+        const isSelected = chosen === letter;
+
+        const row = document.createElement("div");
+        row.className = `p-3 sm:p-3.5 border rounded-xl flex items-center gap-3 cursor-pointer transition ${
+          isSelected ? "bg-blue-50 border-blue-500 shadow-sm" : "bg-white border-slate-200 hover:bg-slate-50"
+        }`;
+        row.onclick = () => {
+          userAnswers[currentIdx] = letter;
+          renderQuestion();
+          renderPalette();
+        };
+
+        const badge = document.createElement("span");
+        badge.className = `w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+          isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"
+        }`;
+        badge.textContent = letter;
+
+        const text = document.createElement("p");
+        text.className = `text-xs sm:text-sm font-medium ${isSelected ? "text-blue-900" : "text-slate-700"}`;
+        text.textContent = optText;
+
+        row.appendChild(badge);
+        row.appendChild(text);
+        optList.appendChild(row);
+      });
+
+      // Prev/Next buttons
+      document.getElementById("prev-btn").disabled = currentIdx === 0;
+      document.getElementById("next-btn").textContent = currentIdx === total - 1 ? "Review All" : "Next";
+
+      // Sync Jump Select
+      document.getElementById("jump-dropdown-select").value = currentIdx;
+    }
+
+    function renderPalette() {
+      const grid = document.getElementById("palette-grid");
+      grid.innerHTML = "";
+      const answeredCount = Object.keys(userAnswers).length;
+      document.getElementById("palette-count").textContent = `${answeredCount} / ${sessionQuestions.length} Answered`;
+
+      sessionQuestions.forEach((_, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "palette-btn";
+        btn.textContent = idx + 1;
+
+        const isCurrent = idx === currentIdx;
+        const isAns = userAnswers[idx] !== undefined;
+        const isFlag = flagged.has(idx);
+
+        if (isCurrent) {
+          btn.classList.add("ring-2", "ring-blue-600", "ring-offset-1");
+        }
+
+        if (isAns) {
+          btn.classList.add("bg-emerald-600", "text-white");
+        } else if (isFlag) {
+          btn.classList.add("bg-amber-500", "text-white");
+        } else {
+          btn.classList.add("bg-slate-200", "text-slate-700", "hover:bg-slate-300");
+        }
+
+        btn.onclick = () => {
+          goToQuestion(idx);
+          closeMobilePalette();
+        };
+
+        grid.appendChild(btn);
+      });
+    }
+
+    function goToQuestion(idx) {
+      if (idx >= 0 && idx < sessionQuestions.length) {
+        currentIdx = idx;
+        renderQuestion();
+        renderPalette();
+      }
+    }
+
+    // Nav Actions
+    document.getElementById("prev-btn").onclick = () => {
+      if (currentIdx > 0) goToQuestion(currentIdx - 1);
+    };
+
+    document.getElementById("next-btn").onclick = () => {
+      if (currentIdx < sessionQuestions.length - 1) {
+        goToQuestion(currentIdx + 1);
+      } else {
+        openMobilePalette();
+      }
+    };
+
+    document.getElementById("clear-btn").onclick = () => {
+      delete userAnswers[currentIdx];
+      renderQuestion();
+      renderPalette();
+    };
+
+    document.getElementById("mark-review-btn").onclick = () => {
+      if (flagged.has(currentIdx)) flagged.delete(currentIdx);
+      else flagged.add(currentIdx);
+      renderQuestion();
+      renderPalette();
+    };
+
+    document.getElementById("quick-jump-btn").onclick = () => {
+      const val = parseInt(document.getElementById("quick-jump-input").value, 10);
+      if (!isNaN(val)) goToQuestion(val - 1);
+    };
+
+    // Mobile Palette Drawer Toggle
+    const paletteAside = document.getElementById("palette-aside");
+    const paletteBackdrop = document.getElementById("palette-backdrop");
+    function openMobilePalette() {
+      paletteAside.classList.remove("translate-x-full");
+      paletteBackdrop.classList.remove("hidden");
+    }
+    function closeMobilePalette() {
+      paletteAside.classList.add("translate-x-full");
+      paletteBackdrop.classList.add("hidden");
+    }
+    document.getElementById("mobile-palette-toggle-btn").onclick = openMobilePalette;
+    document.getElementById("close-palette-drawer-btn").onclick = closeMobilePalette;
+    paletteBackdrop.onclick = closeMobilePalette;
+
+    // End Exam
+    document.getElementById("end-exam-btn").onclick = () => {
+      const unanswered = sessionQuestions.length - Object.keys(userAnswers).length;
+      const conf = confirm(
+        unanswered > 0
+          ? `You still have ${unanswered} unanswered question(s). Are you sure you want to finalize and score the exam?`
+          : "Are you ready to submit your exam and generate the valuation report?"
+      );
+      if (conf) finishExam();
+    };
+
+    // ==================== VALUATION & RESULTS ====================
+    let lastExamResults = null;
+
+    function finishExam() {
+      clearInterval(timerInterval);
+      hideAllWindows();
+      reportWindow.classList.remove("hidden");
+
+      let correctCount = 0;
+      const total = sessionQuestions.length;
+      const rows = [];
+
+      sessionQuestions.forEach((q, idx) => {
+        const studentAns = userAnswers[idx] || "Unanswered";
+        const isCorrect = studentAns === q.ans;
+        if (isCorrect) correctCount++;
+        rows.push({
+          qNum: idx + 1,
+          tier: q.tier,
+          domain: q.domain,
+          stem: q.q,
+          studentAns,
+          correctAns: q.ans,
+          isCorrect,
+          rationale: q.rationale
+        });
+      });
+
+      const incorrectCount = total - correctCount;
+      const pct = Math.round((correctCount / total) * 100);
+
+      document.getElementById("stat-total").textContent = `${Object.keys(userAnswers).length} / ${total}`;
+      document.getElementById("stat-correct").textContent = correctCount;
+      document.getElementById("stat-incorrect").textContent = incorrectCount;
+      document.getElementById("stat-percentage").textContent = `${pct}%`;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString() + " " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById("report-meta").textContent = `Completed on ${dateStr} | Passing Threshold: 70% (AAPC / Prometric Standard)`;
+
+      // Populate Report Table
+      const tbody = document.getElementById("valuation-tbody");
+      tbody.innerHTML = "";
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.className = r.isCorrect ? "bg-white" : "bg-rose-50/40";
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold">${r.qNum}</td>
+          <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${r.tier === 'Simple' ? 'bg-emerald-100 text-emerald-800' : r.tier === 'Intermediate' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">${r.tier}</span></td>
+          <td class="p-2.5 font-medium text-slate-700">${r.domain}</td>
+          <td class="p-2.5 font-mono font-bold ${r.isCorrect ? 'text-emerald-700' : 'text-rose-600'}">${r.studentAns}</td>
+          <td class="p-2.5 font-mono font-bold text-emerald-700">${r.correctAns}</td>
+          <td class="p-2.5 font-semibold ${r.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">${r.isCorrect ? '<i class="fa-solid fa-check"></i> Correct' : '<i class="fa-solid fa-xmark"></i> Incorrect'}</td>
+          <td class="p-2.5 text-slate-600 text-[11px]">${r.rationale}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lastExamResults = { date: dateStr, total, correct: correctCount, incorrect: incorrectCount, pct, rows };
+      recordExamSession({ date: dateStr, total, correct: correctCount, score: pct, status: pct >= 70 ? "PASSED" : "REVIEW NEEDED" });
+    }
+
+    // Export CSV
+    document.getElementById("download-csv-btn").onclick = () => {
+      if (!lastExamResults) return;
+      let csv = "Question,Tier,Domain,Candidate Answer,Correct Answer,Status,Rationale\n";
+      lastExamResults.rows.forEach(r => {
+        const safeRationale = `"${r.rationale.replace(/"/g, '""')}"`;
+        const safeDomain = `"${r.domain.replace(/"/g, '""')}"`;
+        csv += `${r.qNum},${r.tier},${safeDomain},${r.studentAns},${r.correctAns},${r.isCorrect ? "CORRECT" : "INCORRECT"},${safeRationale}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Jasna_Medical_Coding_Report_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    document.getElementById("retake-btn").onclick = () => {
+      hideAllWindows();
+      loginModal.classList.remove("hidden");
+    };
+
+    // ==================== HISTORICAL ANALYTICS ====================
+    function renderHistoryScreen() {
+      hideAllWindows();
+      historyWindow.classList.remove("hidden");
+
+      const hist = getStoredHistory();
+      document.getElementById("hist-total-sessions").textContent = hist.length;
+
+      if (hist.length > 0) {
+        const avg = Math.round(hist.reduce((acc, curr) => acc + curr.score, 0) / hist.length);
+        const peak = Math.max(...hist.map(h => h.score));
+        document.getElementById("hist-avg-score").textContent = `${avg}%`;
+        document.getElementById("hist-peak-score").textContent = `${peak}%`;
+      } else {
+        document.getElementById("hist-avg-score").textContent = "0%";
+        document.getElementById("hist-peak-score").textContent = "0%";
+      }
+
+      const tbody = document.getElementById("history-tbody");
+      tbody.innerHTML = "";
+      if (hist.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No previous sessions found.</td></tr>`;
+      } else {
+        hist.forEach(h => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50";
+          tr.innerHTML = `
+            <td class="p-2.5 font-medium text-slate-700">${h.date}</td>
+            <td class="p-2.5">${h.total} Questions</td>
+            <td class="p-2.5 font-bold">${h.correct} / ${h.total}</td>
+            <td class="p-2.5 font-extrabold ${h.score >= 70 ? 'text-emerald-700' : 'text-rose-600'}">${h.score}%</td>
+            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${h.score >= 70 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${h.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    document.getElementById("view-history-btn").onclick = renderHistoryScreen;
+    document.getElementById("view-analytics-from-report-btn").onclick = renderHistoryScreen;
+    document.getElementById("history-back-btn").onclick = () => {
+      hideAllWindows();
+      loginModal.classList.remove("hidden");
+    };
+    document.getElementById("history-clear-btn").onclick = () => {
+      if (confirm("Are you sure you want to clear Jasna's stored history?")) {
+        localStorage.removeItem("jasna_coding_exam_history");
+        renderHistoryScreen();
+      }
+    };
+
+    // ==================== ADMIN QUESTION INVENTORY & INGESTION ====================
+    function renderAdminTable() {
+      const tbody = document.getElementById("admin-table-body");
+      tbody.innerHTML = "";
+      document.getElementById("admin-bank-count").textContent = activeBank.length;
+
+      activeBank.forEach((q, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-2 font-mono font-bold text-slate-500">${idx + 1}</td>
+          <td class="p-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${q.tier === 'Simple' ? 'bg-emerald-100 text-emerald-800' : q.tier === 'Intermediate' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">${q.tier}</span></td>
+          <td class="p-2 font-medium text-slate-700">${q.domain}</td>
+          <td class="p-2 text-slate-800 truncate max-w-xs" title="${q.q}">${q.q}</td>
+          <td class="p-2 font-mono font-bold text-emerald-700">${q.ans}</td>
+          <td class="p-2">
+            <button class="text-rose-500 hover:text-rose-700 delete-q-btn" data-index="${idx}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll(".delete-q-btn").forEach(btn => {
+        btn.onclick = (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute("data-index"), 10);
+          activeBank.splice(idx, 1);
+          saveStoredBank(activeBank);
+        };
+      });
+    }
+
+    // Add Single Custom Question
+    document.getElementById("single-q-form").onsubmit = (e) => {
+      e.preventDefault();
+      const tier = document.getElementById("new-tier").value;
+      const domain = document.getElementById("new-domain").value.trim();
+      const stem = document.getElementById("new-stem").value.trim();
+      const optA = document.getElementById("new-opt-a").value.trim();
+      const optB = document.getElementById("new-opt-b").value.trim();
+      const optC = document.getElementById("new-opt-c").value.trim();
+      const optD = document.getElementById("new-opt-d").value.trim();
+      const correct = document.getElementById("new-correct").value;
+      const rationale = document.getElementById("new-rationale").value.trim() || "Instructor custom standard question.";
+
+      const newQ = {
+        tier,
+        domain,
+        q: stem,
+        options: [optA, optB, optC, optD],
+        ans: correct,
+        rationale
+      };
+
+      activeBank.unshift(newQ);
+      saveStoredBank(activeBank);
+      e.target.reset();
+      alert("Question successfully added to inventory!");
+    };
+
+    // Reset Bank to default
+    document.getElementById("reset-default-bank-btn").onclick = () => {
+      if (confirm("Reset current question inventory to the procedural 500 bank? Any newly appended items will be cleared.")) {
+        activeBank = buildDefault500Bank();
+        saveStoredBank(activeBank);
+      }
+    };
+
+    // OCR / PDF Processing
+    document.getElementById("process-file-btn").onclick = async () => {
+      const fileInput = document.getElementById("file-upload-input");
+      const rawText = document.getElementById("raw-notes-input").value.trim();
+      const ocrStatus = document.getElementById("ocr-status");
+      const ocrStatusText = document.getElementById("ocr-status-text");
+
+      let extracted = rawText;
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        ocrStatus.classList.remove("hidden");
+
+        if (file.type === "application/pdf" && window.pdfjsLib) {
+          ocrStatusText.textContent = "Extracting text from PDF...";
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+              const page = await pdf.getPage(i);
+              const txt = await page.getTextContent();
+              fullText += txt.items.map(s => s.str).join(" ") + "\n";
+            }
+            extracted += "\n" + fullText;
+          } catch(err) {
+            console.error(err);
+            alert("Failed to parse PDF. Please verify the document format.");
+          }
+        } else if (file.type.startsWith("image/") && window.Tesseract) {
+          ocrStatusText.textContent = "Running OCR scan on image (Tesseract)...";
+          try {
+            const { data: { text } } = await Tesseract.recognize(file, 'eng');
+            extracted += "\n" + text;
+          } catch(err) {
+            console.error(err);
+            alert("OCR parsing failed. Please paste text directly.");
+          }
+        }
+        ocrStatus.classList.add("hidden");
+      }
+
+      if (!extracted.trim()) {
+        alert("Please enter notes or upload a PDF/Image first.");
+        return;
+      }
+
+      // Parse Question blocks from text
+      const parsedQuestions = parseTextIntoQuestions(extracted);
+      if (parsedQuestions.length > 0) {
+        activeBank.unshift(...parsedQuestions);
+        saveStoredBank(activeBank);
+        alert(`Extracted and appended ${parsedQuestions.length} questions to bank!`);
+        document.getElementById("raw-notes-input").value = "";
+        fileInput.value = "";
+      } else {
+        alert("Could not detect multiple-choice formatting. Make sure stems start with Q: and options start with A), B), C), D).");
+      }
+    };
+
+    function parseTextIntoQuestions(text) {
+      const qBlocks = text.split(/(?=Q[:\d\.]+|Question\s*\d*[:\.])/i).filter(b => b.trim().length > 15);
+      const results = [];
+
+      qBlocks.forEach(b => {
+        const optAMatch = b.match(/A[\)\.\:\-]\s*([^\n\r]+)/i);
+        const optBMatch = b.match(/B[\)\.\:\-]\s*([^\n\r]+)/i);
+        const optCMatch = b.match(/C[\)\.\:\-]\s*([^\n\r]+)/i);
+        const optDMatch = b.match(/D[\)\.\:\-]\s*([^\n\r]+)/i);
+        const ansMatch = b.match(/Ans(?:wer)?[\:\s\-]+([A-D])/i);
+
+        if (optAMatch && optBMatch) {
+          const stemLine = b.split(/A[\)\.\:\-]/i)[0].replace(/^Q[:\d\.]+\s*/i, "").trim();
+          results.push({
+            tier: "Intermediate",
+            domain: "Uploaded Material",
+            q: stemLine || "Medical Coding Review Question",
+            options: [
+              optAMatch[1].trim(),
+              optBMatch[1].trim(),
+              optCMatch ? optCMatch[1].trim() : "None of the above",
+              optDMatch ? optDMatch[1].trim() : "All of the above"
+            ],
+            ans: ansMatch ? ansMatch[1].toUpperCase() : "A",
+            rationale: "Imported via OCR / PDF extraction engine."
+          });
+        }
+      });
+
+      return results;
+    }
+
+    // Admin Navigation
+    document.getElementById("admin-launch-student-btn").onclick = () => {
+      tabStudentBtn.click();
+      hideAllWindows();
+      loginModal.classList.remove("hidden");
+    };
+
+    document.getElementById("admin-logout-btn").onclick = () => {
+      hideAllWindows();
+      loginModal.classList.remove("hidden");
+    };
+  </script>
+</body>
+</html>
